@@ -19,6 +19,7 @@ const cv::String keys =
  "{@videoSrc | | video to stitch }"
  "{@outFile | result.png| stitched image }"
  "{N count |-1 | count of frames to stitch }"
+ "{t threshold |30 | threshold for stitcher }"
 ;
 
 int main(int argc, char* argv[])
@@ -34,10 +35,11 @@ int main(int argc, char* argv[])
 	auto outName = parser.get<std::string>(1);
 	std::cout << "Will write result in " << outName << std::endl;
 	maxFrames = parser.get<int>("N");
+	float threshold = parser.get<float>("t");
 
 	CStitcher stitch (std::string("BRISK"),
-					cv::BRISK::create(30, 3),
-					cv::BRISK::create(30.,3),
+					cv::BRISK::create(threshold, 3),
+					cv::BRISK::create(threshold,3),
 					new cv::BFMatcher(cv::NORM_L2));
 	stitch.setOutput(outName);
 	// CStitcher stitch (std::string("SURF"),
@@ -57,29 +59,6 @@ int main(int argc, char* argv[])
 	cv::Size resSize=stitch.CalcResultSize();
 	std::cout <<"Resulting image size " << resSize.height<< "x" <<resSize.width << std::endl;
 	stitch.CreateMosaic(resSize);
-//	stitch.MatchAndStitch(resSize);
-
-
-/*	std::vector<cv::Mat> imageSequence;
-	cv::Mat image;
-	for (std::deque<std::string>::const_iterator nameIterator=fileNames.begin(); nameIterator!=fileNames.end(); ++nameIterator)
-	{
-		image=cv::imread(*nameIterator);
-		imageSequence.push_back(image.clone());
-	}
-
-	cv::Stitcher test=cv::Stitcher::createDefault();
-//	std::cout << "Estimating movements" << std::endl;
-//	test.setFeaturesFinder(new cv::detail::SurfFeaturesFinder(90,1,2));
-//	test.setFeaturesMatcher(new cv::detail::BestOf2NearestMatcher(false,0.8f,6,6));
-//	test.estimateTransform(imageSequence);
-//	std::cout << "Composing panno" << std::endl;
-//	test.composePanorama(image);
-	test.stitch(imageSequence,image);
-	cv::imshow("Panno",image);
-	cv::imwrite("stitch_result.png",image);
-	cv::waitKey();
-	*/
  	return 0;
 }
 

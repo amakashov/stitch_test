@@ -27,7 +27,7 @@ CStitcher::CStitcher(void)
 
 	m_pDetector =  cv::BRISK::create(10,3);
 	m_pDescriptor = cv::BRISK::create(10,3);
-	m_pMatcher = new cv::BFMatcher(cv::NORM_HAMMING, false);
+	m_pMatcher = cv::BFMatcher::create(cv::NORM_HAMMING, true);
 	m_Name ="Default";
 }
 
@@ -125,44 +125,44 @@ int CStitcher::MakeEnhancement(void)
 
 CImageData  CStitcher::MatchImages(cv::Mat& image1, cv::Mat& image2)
 {
-	std::vector<cv::DMatch> matches;
-	std::vector<std::vector<cv::DMatch>> knnMatches, reverseKnnMatches, symmMatches;
-
+	vector<cv::DMatch> goodMatches;
 	std::vector<cv::KeyPoint> m_Keypoints1,
 							  m_Keypoints2;
-	cv::Mat m_Descriptors1,
-			m_Descriptors2;
 
-	m_pDetector->detect(image1, m_Keypoints1);
-	m_pDetector->detect(image2, m_Keypoints2);
-/*
-#ifdef DEBUG_TESTING
-	cv::Mat featureImage;
-	cv::drawKeypoints(image1, // original image
-	m_Keypoints1, // vector of keypoints
-	featureImage, // the resulting image
-	cv::Scalar(255,255,255), // color of the points
-	cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS); //flag
-	cv::imshow("Keypoints1", featureImage);
-	cv::drawKeypoints(image2, // original image
-	m_Keypoints2, // vector of keypoints
-	featureImage, // the resulting image
-	cv::Scalar(255,255,255), // color of the points
-	cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS); //flag
-	cv::imshow("Keypoints2", featureImage);
-	cv::waitKey();
-#endif
-*/
-	m_pDescriptor->compute(image1, m_Keypoints1, m_Descriptors1);
-	m_pDescriptor->compute(image2, m_Keypoints2, m_Descriptors2);
-	m_pMatcher->knnMatch(m_Descriptors1, m_Descriptors2, knnMatches,2);
-	vector<cv::DMatch> goodMatches;
-	for (auto match : knnMatches)
+	while (goodMatches.size() >500 || goodMatches.size()<20)
 	{
-		if (match[0].distance < 0.7 * match[1].distance)
-			goodMatches.push_back(match[0]);
-	}
+		std::vector<std::vector<cv::DMatch>> knnMatches;
+		cv::Mat m_Descriptors1,
+				m_Descriptors2;
 
+		goodMatches.clear();
+		m_Keypoints1.clear();
+		m_Keypoints2.clear();
+
+		m_pDetector->detect(image1, m_Keypoints1);
+		m_pDetector->detect(image2, m_Keypoints2);
+		m_pDescriptor->compute(image1, m_Keypoints1, m_Descriptors1);
+		m_pDescriptor->compute(image2, m_Keypoints2, m_Descriptors2);
+		m_pMatcher->knnMatch(m_Descriptors1, m_Descriptors2, knnMatches,2);
+		for (auto match : knnMatches)
+		{
+			if (match[0].distance < 0.7 * match[1].distance)
+				goodMatches.push_back(match[0]);
+		}
+
+		cv::Ptr<cv::BRISK> ptr = m_pDetector.dynamicCast<cv::BRISK>();
+		auto threshold = ptr->getThreshold();
+		if (goodMatches.size()>1000)
+			ptr->setThreshold(std::min<float>(1000, threshold+10));
+		else if (goodMatches.size()>500)
+			ptr->setThreshold(std::min<float>(1000, threshold+1));
+		else if (goodMatches.size()<20)
+			ptr->setThreshold(std::max<float>(15, threshold-10));
+		else if (goodMatches.size()<100)
+			ptr->setThreshold(std::max<float>(20, threshold-1));
+		
+		cout << goodMatches.size() << " threshold set to " << threshold << endl;
+	}
 	CImageData retData;
 	retData.SetKeypoints(m_Keypoints1,m_Keypoints2);
 	retData.SetMatches(goodMatches);
@@ -189,16 +189,21 @@ int CStitcher::MakeMatches(int length)
 	auto lastImage=m_FiltredSequence.cend();
 	lastImage--;
 
+	int counter = 0;
+
 	for (auto it=m_FiltredSequence.cbegin(); it!= lastImage;)
 	{
 		current=it->clone();
 
 		it++;
-		next=it->clone();
+		next=*it;//->clone();
 
 		// cv::imshow("First", current);
 		// cv::imshow("Second", next);
+		cout << "Working on " << counter << "->" << ++counter << endl;
 		CImageData imData = MatchImages(current, next);
+		cout << "Found " << imData.Matches().size() << " matches" << endl;
+
 		cv::Mat nextHomoMatrix=CalcFundamentalMatrix(imData, current, next);
 
 		movems=movems*nextHomoMatrix;
@@ -223,7 +228,7 @@ cv::Mat CStitcher::CalcFundamentalMatrix(CImageData imData, cv::Mat firstImage, 
 		// cv::imwrite("matches.jpg", outImage);
 		std::cout << "Not enough points! " << matches.size() << std::endl;
 		// cv::waitKey();
-		return cv::Mat::ones(3,3,CV_64F);
+		return cv::Mat::eye(3,3,CV_64F);
 	}
 
 	auto keys1 = imData.FirstKeypoints();
@@ -372,39 +377,6 @@ int CStitcher::RetranslateCoords(cv::Point originPoint, double startAngle)
 		*it=start* *it;
 	}
 
-	return 0;
-}
-
-
-int CStitcher::MatchAndStitch(cv::Size size)
-{
-	cv::Mat resultingImg (size, m_ImageType),
-		    tmpImg(size, m_ImageType);
-	auto it=m_ImageSequence.cbegin(),
-		 endIt=--(m_ImageSequence.cend());
-	cv::warpPerspective(*it, resultingImg, *(m_Movems.begin()), size);
-	cv::Mat currnetImage=*it;
-	++it;
-	CImageData matchData;
-	cv::Mat homography, mask;
-
-
-	for (auto movIt = m_PartMovems.begin() ; it!=endIt; ++it, ++movIt)
-	{
-		currnetImage=*it;
-		cv::Size singleImageSize = currnetImage.size();
-		matchData=MatchImages(resultingImg,currnetImage);
-		homography=CalcFundamentalMatrix(matchData);
-		homography.at<double>(2,2)=1;
-
-		cv::warpPerspective(*it, tmpImg, homography, size);
-		cv::compare(tmpImg,0,mask,cv::CMP_GT);
-		cv::dilate(mask,mask, cv::Mat(), cv::Point(-1,-1),5);
-		cv::add(0,tmpImg,resultingImg,mask);
-	}
-	cv::imshow("Result", resultingImg);
-	cv::imwrite("MatchAndStitch.png",resultingImg);
-	cv::waitKey();
 	return 0;
 }
 

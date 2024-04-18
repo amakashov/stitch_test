@@ -52,7 +52,6 @@ public:
 	cv::Size CalcResultSize(void);
 	int CreateMosaic(cv::Size size);
 	int RetranslateCoords(cv::Point originPoint, double startAngle=0);
-	int MatchAndStitch(cv::Size size);
 
 	void warpMatrix(cv::Size sz, double theta, double phi, double gamma, double scale,double fovx, double fovy, cv::Mat& M);
 
