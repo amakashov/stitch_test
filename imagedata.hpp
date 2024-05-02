@@ -3,11 +3,11 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 
-class CImageData
+class ImageData
 {
 public:
-	CImageData(void);
-	~CImageData(void);
+	ImageData(void);
+	~ImageData(void);
 
 	void SetKeypoints(std::vector<cv::KeyPoint> keypoints1, std::vector<cv::KeyPoint> keypoints2) {m_KeypointsFirst=keypoints1; m_KeypointsSecond=keypoints2;}
 	std::vector<cv::KeyPoint> FirstKeypoints() const {return m_KeypointsFirst;}
@@ -24,3 +24,8 @@ protected:
 	std::vector<std::vector<cv::DMatch>> m_knnMatches;
 };
 
+struct FeatureInfo
+{
+	std::vector<cv::KeyPoint> keypoints;
+	cv::Mat descriptors;
+};

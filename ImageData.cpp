@@ -1,11 +1,11 @@
-#include "ImageData.h"
+#include "imagedata.hpp"
 
 
-CImageData::CImageData(void)
+ImageData::ImageData(void)
 {
 }
 
 
-CImageData::~CImageData(void)
+ImageData::~ImageData(void)
 {
 }

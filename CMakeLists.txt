@@ -8,7 +8,7 @@ find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS} )
 message("OpenCV include dir ${OpenCV_INCLUDE_DIRS}")
 
-file(GLOB src *.cpp *.h)
+file(GLOB src *.cpp *.hpp)
 add_executable(stitchet_test ${src})
 target_include_directories(stitchet_test PRIVATE ${OpenCV_INCLUDE_DIRS} )
 target_link_libraries(stitchet_test ${OpenCV_LIBS} )
