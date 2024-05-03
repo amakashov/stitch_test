@@ -21,12 +21,12 @@ static double deg2Rad(double deg){return deg*(M_PI/180);}//Convert degrees to ra
 
 
 StitcherPipeline::StitcherPipeline(void)
-	: m_frameProcessor("BRISK", 30, 3),
-	  m_stitcher("new_result.png")
+	: m_frameProcessor("BRISK", 30, 3)
 {
 //	pClahe = cv::createCLAHE(3, cv::Size(16,16));
 	pClahe = cv::createCLAHE(40, cv::Size(8,8));
 	m_Name ="Default";
+	m_stitcher = make_shared<SingleFrameStitcher>("new_result.png");
 }
 
 
@@ -34,7 +34,7 @@ StitcherPipeline::StitcherPipeline(std::string name,
 					 cv::Ptr<cv::FeatureDetector> pDetector,
 					 cv::Ptr<cv::DescriptorExtractor> pExtractor,
 					 cv::Ptr<cv::DescriptorMatcher> pMatcher)
-					 : m_frameProcessor(name, 30, 3), m_stitcher("new_result.png")
+					 : m_frameProcessor(name, 30, 3)
 {
 
 	pClahe = cv::createCLAHE(50, cv::Size(16,16));
@@ -70,8 +70,8 @@ int StitcherPipeline::ProcessVideo(std::string fileName, long long to, long long
 		cap >> second;
 		second = Mat(second, cropRect);
 		cnt++;
-		secondInfo = m_frameProcessor.GetKeypointData(second);
-		auto result = m_frameProcessor.MatchImages(firstInfo, secondInfo);
+		// secondInfo = m_frameProcessor.GetKeypointData(second);
+		auto result = m_frameProcessor.MatchImages(first, firstInfo, second, secondInfo);
 		m_matchedData.push_back(result);
 	}
 	cap.release();
@@ -82,8 +82,8 @@ int StitcherPipeline::ProcessVideo(std::string fileName, long long to, long long
 	}
 	auto movems = m_estimator.GetMovements();
 	cout << "Calculating size..." << endl;
-	auto resSize = m_stitcher.CalculateSize(movems, imageSize);
-	m_stitcher.RetranslateToOrigin(movems);
+	auto resSize = m_stitcher->CalculateSize(movems, imageSize);
+	m_stitcher->RetranslateToOrigin(movems);
 	cap.open(fileName);
 	if (!cap.isOpened())
 		return -1;
@@ -92,16 +92,16 @@ int StitcherPipeline::ProcessVideo(std::string fileName, long long to, long long
 	if (cap.grab())
 	{
 		cap >> second;
-		m_stitcher.CreatePanno(resSize, second, *(from++));
+		m_stitcher->CreatePanno(resSize, second, *(from++));
 	}
 	while (cap.grab() && from != movems.end())
 	{
 		cap >> second;
 		second = Mat(second, cropRect);
-		m_stitcher.AppendToPanno(second, *(from++));
+		m_stitcher->AppendToPanno(second, *(from++));
 	}
 	cout << "Saving image to " << m_outFile << "..." << endl;
-	m_stitcher.SaveImage(m_outFile);
+	m_stitcher->SaveImage(m_outFile);
 
 	return cnt;
 }

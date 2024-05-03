@@ -2,17 +2,19 @@
 
 #include <string>
 #include <opencv2/calib3d.hpp>
+#include "istitcher.hpp"
 
-class SingleFrameStitcher
+class SingleFrameStitcher : public IStitcher
 {
 public:
     SingleFrameStitcher(std::string filename) : m_filename(filename) {}
-    cv::Size CalculateSize(std::vector<cv::Mat>& movems, cv::Size imSize);
-    void RetranslateToOrigin(std::vector<cv::Mat>& movems);
+    virtual cv::Size CalculateSize(std::vector<cv::Mat>& movems, cv::Size imSize) override;
+    virtual void RetranslateToOrigin(std::vector<cv::Mat>& movems) override;
+    virtual void CreatePanno(cv::Size size, cv::Mat image, cv::Mat origin) override;
+    virtual void AppendToPanno(cv::Mat image, cv::Mat origin) override;
+    virtual void SaveImage(std::string filename) override;
+
     cv::Mat MakePanno(std::vector<cv::Mat>& movems, std::vector<cv::Mat>& images);
-    void CreatePanno(cv::Size size, cv::Mat image, cv::Mat origin);
-    void AppendToPanno(cv::Mat image, cv::Mat origin);
-    void SaveImage(std::string filename);
 protected:
     std::string m_filename;
     cv::Size m_resultSize;

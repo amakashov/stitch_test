@@ -27,7 +27,7 @@ protected:
 
 	FrameProcessor m_frameProcessor;
 	MoveEstimator m_estimator;
-	SingleFrameStitcher m_stitcher;
+	std::shared_ptr<IStitcher> m_stitcher;
 
 	std::vector<ImageData> m_matchedData;
 	

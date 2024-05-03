@@ -21,10 +21,10 @@ cv::Mat MoveEstimator::EstimateMovements(ImageData const &next)
         second.push_back(Point2f(keys2[match.trainIdx].pt));
     }
     
-    Mat transform = estimateAffine2D(first, second,noArray(), RANSAC, 3);
+    Mat transform = estimateAffinePartial2D(first, second, noArray(), RANSAC, 3);
     CosnstantZoom(transform);
     invertAffineTransform(transform, transform);
-    
+
     transform.push_back(Mat(vector<double>{0,0,1.0}).t());
     transform = prev * transform;
     m_movemetns.push_back(transform);
