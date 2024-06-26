@@ -6,7 +6,7 @@
 #include <string>
 
 #include <opencv2/opencv.hpp>
-#include <opencv2/xfeatures2d.hpp>
+// #include <opencv2/xfeatures2d.hpp>
 //#include <opencv2\stitching\stitcher.hpp>
 
 #include "stitcherpipeline.hpp"
@@ -37,16 +37,12 @@ int main(int argc, char* argv[])
 	maxFrames = parser.get<int>("N");
 	float threshold = parser.get<float>("t");
 
-	StitcherPipeline stitch (std::string("BRISK"),
-					cv::BRISK::create(threshold, 3),
-					cv::BRISK::create(threshold,3),
-					new cv::BFMatcher(cv::NORM_L2));
+	std::cout << "Threshold " << threshold << std::endl;
+
+	StitcherPipeline stitch (threshold);
 	stitch.setOutput(outName);
 
 	stitch.ProcessVideo(videoName, maxFrames);
-	// cv::Size resSize=stitch.CalcResultSize();
-	// std::cout <<"Resulting image size " << resSize.height<< "x" <<resSize.width << std::endl;
-	// stitch.CreateMosaic(resSize);
  	return 0;
 }
 

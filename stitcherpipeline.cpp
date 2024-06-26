@@ -20,24 +20,13 @@ static double rad2Deg(double rad){return rad*(180/M_PI);}//Convert radians to de
 static double deg2Rad(double deg){return deg*(M_PI/180);}//Convert degrees to radians
 
 
-StitcherPipeline::StitcherPipeline(void)
-	: m_frameProcessor("BRISK", 30, 3)
+StitcherPipeline::StitcherPipeline(int threshold, int octaves)
+	: m_frameProcessor("BRISK", threshold, octaves)
 {
 //	pClahe = cv::createCLAHE(3, cv::Size(16,16));
 	pClahe = cv::createCLAHE(40, cv::Size(8,8));
 	m_Name ="Default";
 	m_stitcher = make_shared<SingleFrameStitcher>("new_result.png");
-}
-
-
-StitcherPipeline::StitcherPipeline(std::string name,
-					 cv::Ptr<cv::FeatureDetector> pDetector,
-					 cv::Ptr<cv::DescriptorExtractor> pExtractor,
-					 cv::Ptr<cv::DescriptorMatcher> pMatcher)
-					 : m_frameProcessor(name, 30, 3)
-{
-
-	pClahe = cv::createCLAHE(50, cv::Size(16,16));
 }
 
 StitcherPipeline::~StitcherPipeline(void)
@@ -53,6 +42,10 @@ int StitcherPipeline::ProcessVideo(std::string fileName, long long to, long long
 	if (!cap.isOpened())
 		return -1;
 	long long cnt = 0;
+	if (to<0)
+	{
+		to = std::numeric_limits<long long>::max();
+	}
 	Size imageSize;
 	cv::Rect cropRect;
 	if (cap.grab() && cnt<to)

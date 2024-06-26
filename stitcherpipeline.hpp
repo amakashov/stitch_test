@@ -14,11 +14,7 @@
 class StitcherPipeline
 {
 public:
-	StitcherPipeline(void);
-	StitcherPipeline(std::string name,
-					 cv::Ptr<cv::FeatureDetector> pDetector,
-					 cv::Ptr<cv::DescriptorExtractor> pExtractor,
-					 cv::Ptr<cv::DescriptorMatcher> pMatcher);
+	StitcherPipeline(int threshold = 30, int octaves = 3);
 
 	~StitcherPipeline(void);
 
