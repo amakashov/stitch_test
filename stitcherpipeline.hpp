@@ -4,7 +4,7 @@
 #include <deque>
 #include <map>
 
-#include <opencv2\imgproc\imgproc.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include "imagedata.hpp"
 #include "frameprocessor.hpp"
@@ -14,25 +14,20 @@
 class StitcherPipeline
 {
 public:
-	StitcherPipeline(int threshold = 30, int octaves = 3);
-
-	~StitcherPipeline(void);
+	StitcherPipeline(float threshold = 30, int octaves = 3);
 
 protected:
-	cv::Ptr<cv::CLAHE> pClahe;
 
 	FrameProcessor m_frameProcessor;
 	MoveEstimator m_estimator;
 	std::shared_ptr<IStitcher> m_stitcher;
 
 	std::vector<ImageData> m_matchedData;
-	
-	std::string m_Name;
 	std::string m_outFile;
 
 public:
-	int ProcessVideo(std::string fileName, long long to = -1, long long skip = -1);
-	int MakeEnhancement(void);
+	int ProcessVideo(std::string fileName, long long to = -1, cv::Size resultImageSize = cv::Size(0,0));
+	// int MakeEnhancement(void);
 	void setOutput(std::string fName) {m_outFile = fName;};
 };
 

@@ -54,4 +54,4 @@ void MoveEstimator::CosnstantZoom(Mat &mat)
 	first[1] /= scale;
 	second[0] /= scale;
 	second[1] /= scale;
-}
+}   

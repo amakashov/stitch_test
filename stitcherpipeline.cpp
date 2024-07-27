@@ -20,21 +20,13 @@ static double rad2Deg(double rad){return rad*(180/M_PI);}//Convert radians to de
 static double deg2Rad(double deg){return deg*(M_PI/180);}//Convert degrees to radians
 
 
-StitcherPipeline::StitcherPipeline(int threshold, int octaves)
+StitcherPipeline::StitcherPipeline(float threshold, int octaves)
 	: m_frameProcessor("BRISK", threshold, octaves)
 {
-//	pClahe = cv::createCLAHE(3, cv::Size(16,16));
-	pClahe = cv::createCLAHE(40, cv::Size(8,8));
-	m_Name ="Default";
 	m_stitcher = make_shared<SingleFrameStitcher>("new_result.png");
 }
 
-StitcherPipeline::~StitcherPipeline(void)
-{
-
-}
-
-int StitcherPipeline::ProcessVideo(std::string fileName, long long to, long long skip)
+int StitcherPipeline::ProcessVideo(std::string fileName, long long to, cv::Size resultImageSize)
 {
 	Mat first, second;
 	FeatureInfo firstInfo, secondInfo;
@@ -75,8 +67,8 @@ int StitcherPipeline::ProcessVideo(std::string fileName, long long to, long long
 	}
 	auto movems = m_estimator.GetMovements();
 	cout << "Calculating size..." << endl;
-	auto resSize = m_stitcher->CalculateSize(movems, imageSize);
-	m_stitcher->RetranslateToOrigin(movems);
+	m_stitcher->ImageCounter(movems, imageSize, resultImageSize);
+	m_stitcher->RetranslateToOrigin(movems, imageSize);
 	cap.open(fileName);
 	if (!cap.isOpened())
 		return -1;
@@ -85,7 +77,7 @@ int StitcherPipeline::ProcessVideo(std::string fileName, long long to, long long
 	if (cap.grab())
 	{
 		cap >> second;
-		m_stitcher->CreatePanno(resSize, second, *(from++));
+		m_stitcher->CreatePanno(second, *(from++));
 	}
 	while (cap.grab() && from != movems.end())
 	{
@@ -93,13 +85,13 @@ int StitcherPipeline::ProcessVideo(std::string fileName, long long to, long long
 		second = Mat(second, cropRect);
 		m_stitcher->AppendToPanno(second, *(from++));
 	}
-	cout << "Saving image to " << m_outFile << "..." << endl;
+	cout << "Saving image to " << m_outFile << ".png" << "..." << endl;
 	m_stitcher->SaveImage(m_outFile);
 
-	return cnt;
-}
-
-int StitcherPipeline::MakeEnhancement(void)
-{
 	return 0;
 }
+
+// int StitcherPipeline::MakeEnhancement(void)
+// {
+// 	return 0;
+// }
