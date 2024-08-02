@@ -27,7 +27,6 @@ protected:
 
 public:
 	int ProcessVideo(std::string fileName, long long to = -1, cv::Size resultImageSize = cv::Size(0,0));
-	// int MakeEnhancement(void);
 	void setOutput(std::string fName) {m_outFile = fName;};
 };
 

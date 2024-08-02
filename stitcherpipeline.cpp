@@ -55,7 +55,6 @@ int StitcherPipeline::ProcessVideo(std::string fileName, long long to, cv::Size 
 		cap >> second;
 		second = Mat(second, cropRect);
 		cnt++;
-		// secondInfo = m_frameProcessor.GetKeypointData(second);
 		auto result = m_frameProcessor.MatchImages(first, firstInfo, second, secondInfo);
 		m_matchedData.push_back(result);
 	}
@@ -77,6 +76,7 @@ int StitcherPipeline::ProcessVideo(std::string fileName, long long to, cv::Size 
 	if (cap.grab())
 	{
 		cap >> second;
+		second = Mat(second, cropRect);
 		m_stitcher->CreatePanno(second, *(from++));
 	}
 	while (cap.grab() && from != movems.end())
@@ -90,8 +90,3 @@ int StitcherPipeline::ProcessVideo(std::string fileName, long long to, cv::Size 
 
 	return 0;
 }
-
-// int StitcherPipeline::MakeEnhancement(void)
-// {
-// 	return 0;
-// }

@@ -8,7 +8,9 @@
 
 using namespace std;
 using namespace cv;
-
+//переписанный метод CalculateSize - считает кол-во изображений, на котрорых будут размещены склеенные кадры (если при вводе не были
+//указаны размеры по х и по y в пикселях, то все склеивается в 1 изображение по умолчанию) и ничего не возвращает
+//т.к. размеры изображений(-ия) и кол-во изображений являются полями класса SingleFrameStitcher
 void SingleFrameStitcher::ImageCounter(std::vector<cv::Mat> &movems, cv::Size imSize, cv::Size resultImageSize)
 {
 	double maxX=imSize.width/2, maxY=imSize.height/2, minX=-imSize.width/2, minY=-imSize.height/2;
@@ -19,6 +21,7 @@ void SingleFrameStitcher::ImageCounter(std::vector<cv::Mat> &movems, cv::Size im
 
 	for (auto const & cadr : movems)
 	{
+		//отдельно вынесен метод расчет координат углов кадров относительно центров кадров
 		vector<double> relativeCoordinates = CornerCoordinatesCounter (cadr,imSize);
 
 		if(cadr.at<double>(0,2)+relativeCoordinates[0]>maxX)
@@ -30,11 +33,12 @@ void SingleFrameStitcher::ImageCounter(std::vector<cv::Mat> &movems, cv::Size im
 		if(cadr.at<double>(1,2)+relativeCoordinates[3]<minY)
 			minY=cadr.at<double>(1,2)+relativeCoordinates[3];
 	}
-
-	sizeX= int (maxX-minX);
-	sizeY= int (maxY-minY);
-	m_origin.x = floor(minX) + imSize.width/2;
-	m_origin.y = floor(minY) + imSize.height/2;
+	//в вычислении размера полного изображения добавлено округление в большую сторону (так размешенные кадры точно не должны обрезаться
+	//- видно на примере склейки test1.avi)
+	sizeX= (int)ceil(maxX-minX);
+	sizeY= (int)ceil(maxY-minY);
+	m_origin.x = (int)floor(minX + (double)imSize.width/2);
+	m_origin.y = (int)floor(minY + (double)imSize.height/2);
 
 	if (!(resultImageSize == Size(0,0))){
 		m_singleImageSize = resultImageSize;
@@ -42,8 +46,8 @@ void SingleFrameStitcher::ImageCounter(std::vector<cv::Mat> &movems, cv::Size im
 		m_singleImageSize = cv::Size(sizeX, sizeY);
 	}
 
-	count_x = ceil(sizeX/m_singleImageSize.width);
-	count_y = ceil(sizeY/m_singleImageSize.height);
+	count_x = (int)ceil(sizeX/(double)m_singleImageSize.width);
+	count_y = (int)ceil(sizeY/(double)m_singleImageSize.height);
 
 	cout << "Count of images will be " << count_x*count_y << " with size " << m_singleImageSize.width << "x" << m_singleImageSize.height << endl;
 	cout << "with origin point (" <<m_origin.x << "," << m_origin.y << ")" << endl;
@@ -58,11 +62,13 @@ std::vector<double> SingleFrameStitcher::CornerCoordinatesCounter(const cv::Mat 
 	vector<double> corners_coordinates_y;
 	vector<double> relative_max_min_x_y;
 
-	corners_coordinates_x.push_back((imSize.width/2)*cadr.at<double>(0,0) +  (imSize.height/2)*cadr.at<double>(0,1));
-	corners_coordinates_x.push_back((-imSize.width/2)*cadr.at<double>(0,0) +  (imSize.height/2)*cadr.at<double>(0,1));
-	corners_coordinates_x.push_back((-imSize.width/2)*cadr.at<double>(0,0) +  (-imSize.height/2)*cadr.at<double>(0,1));
-	corners_coordinates_x.push_back((imSize.width/2)*cadr.at<double>(0,0) +  (-imSize.height/2)*cadr.at<double>(0,1));
+	//вектор заполняется значениями координат углов повернутого кадра при помощи афинного преобразования
+	corners_coordinates_x.push_back(((double)imSize.width/2)*cadr.at<double>(0,0) +  ((double)imSize.height/2)*cadr.at<double>(0,1));
+	corners_coordinates_x.push_back((-(double)imSize.width/2)*cadr.at<double>(0,0) +  ((double)imSize.height/2)*cadr.at<double>(0,1));
+	corners_coordinates_x.push_back((-(double)imSize.width/2)*cadr.at<double>(0,0) +  (-(double)imSize.height/2)*cadr.at<double>(0,1));
+	corners_coordinates_x.push_back(((double)imSize.width/2)*cadr.at<double>(0,0) +  (-(double)imSize.height/2)*cadr.at<double>(0,1));
 
+	//находим максимальное и минимальное значения среди посчитанных координат
 	for (int i = 0; i < corners_coordinates_x.size(); ++i){
 		if (corners_coordinates_x[i] > relativeMaxX)
 			relativeMaxX = corners_coordinates_x[i];
@@ -70,9 +76,11 @@ std::vector<double> SingleFrameStitcher::CornerCoordinatesCounter(const cv::Mat 
 			relativeMinX = corners_coordinates_x[i];
 	}
 
+	//добавляем значения в возвращаемый вектор
 	relative_max_min_x_y.push_back(relativeMaxX);
 	relative_max_min_x_y.push_back(relativeMinX);
 
+	//аналогично х
 	corners_coordinates_y.push_back((imSize.width/2)*cadr.at<double>(1,0) +  (imSize.height/2)*cadr.at<double>(1,1));
 	corners_coordinates_y.push_back((-imSize.width/2)*cadr.at<double>(1,0) +  (imSize.height/2)*cadr.at<double>(1,1));
 	corners_coordinates_y.push_back((-imSize.width/2)*cadr.at<double>(1,0) +  (-imSize.height/2)*cadr.at<double>(1,1));
@@ -98,82 +106,91 @@ void SingleFrameStitcher::RetranslateToOrigin(std::vector<cv::Mat> &movems, cv::
 	start.at<double>(0,2)=-m_origin.x;
 	start.at<double>(1,2)=-m_origin.y;
 
-	//cout << image_number.end()-image_number_iterator << endl;
-
 	for (auto & move : movems)
 	{
 		move=start* move;
-		
-		if (count_x == 1 && count_y == 1){
-			continue;
-		}
-
-		int x_center_coordinate = (int)move.at<double>(0,2) % m_singleImageSize.width;
-		int y_center_coordinate = (int)move.at<double>(1,2) % m_singleImageSize.height;
-		int image_number_x =(int)move.at<double>(0,2) / m_singleImageSize.width;
-		int image_number_y = (int)move.at<double>(1,2) / m_singleImageSize.height;
-
-		std::vector<double> relativeCoordinates = CornerCoordinatesCounter (move, imSize);
-
-		int over_x = ((x_center_coordinate+(int)relativeCoordinates[0])/m_singleImageSize.width)+1;
-		if ((x_center_coordinate+(int)relativeCoordinates[0]) % m_singleImageSize.width == 0 || over_x == 1){
-			over_x-=1;
-		}
-		int under_x = ((x_center_coordinate+(int)relativeCoordinates[1])/m_singleImageSize.width)-1;
-		if ((x_center_coordinate+(int)relativeCoordinates[1]) % m_singleImageSize.width == 0 || under_x == -1){
-			under_x+=1;
-		}
-		int over_y = ((y_center_coordinate+(int)relativeCoordinates[2])/m_singleImageSize.height)+1;
-		if ((y_center_coordinate+(int)relativeCoordinates[2]) % m_singleImageSize.height == 0 || over_y == 1){
-			over_y-=1;
-		}
-		int under_y = ((y_center_coordinate+(int)relativeCoordinates[3])/m_singleImageSize.height)-1;
-		if ((y_center_coordinate+(int)relativeCoordinates[3])/m_singleImageSize.height == 0 || under_y == -1){
-			under_y+=1;
-		}
-
-		image_number.push_back({});
-
-		for (int i = under_x; i <= over_x; ++i){
-			for (int j = under_y; j <= over_y; ++j){
-				image_number[iterator].push_back(make_pair(i+image_number_x,j+image_number_y));
-			}
-		}
-		iterator++;
+		//отдельно вынесен метод заполнения image_numbers, в котором хранятся номера изображений (где первый номер - номер столбца,
+		//второй-номер строки), на которых возможно расположение кадра (более точного метода определения изображений, к которым может 
+		//принадлежать кадр пока не удалось создать). работает даже если задавать размеры изображений меньше размера кадра 
+		ImageNumberFiller (move, imSize);
 	}
-	// int al = 0;
-	// for (auto i : image_number){
-	// 	cout << "over_x: " << over_x << ", over_y: " << over_y << ", under_x: " << under_x << ", under_y: " << under_y << " ";
-	// 	cout << al << "  "; 
-	// 	for (auto j : i){
-	// 		cout << j.first << ", " << j.second << "; ";
-	// 	}
-	// 	cout << endl;
-	// 	al++;
-	// }
-	// cout << iterator;
 }
 
-// cv::Mat SingleFrameStitcher::MakePanno(std::vector<cv::Mat> &movems, std::vector<cv::Mat> &images)
-// {
-// 	return m_result;
-// }
+void SingleFrameStitcher::ImageNumberFiller(cv::Mat &move, cv::Size imSize){
 
-void SingleFrameStitcher::CreatePanno(cv::Mat image, cv::Mat origin)
-{
-	for (int i = 0; i < count_x; ++i){
-		for (int j =0; j < count_y; ++j){
-			new_m_result.push_back({Mat(m_singleImageSize,CV_8UC1)});
+    std::vector<double> relativeCoordinates = CornerCoordinatesCounter (move, imSize);
+
+	int x_center_coordinate = (int)(move.at<double>(0,2) + (double)imSize.width/2)  % m_singleImageSize.width;
+	int y_center_coordinate = (int)(move.at<double>(1,2) + (double)imSize.height/2) % m_singleImageSize.height;
+	int image_number_x =(int)(move.at<double>(0,2) + (double)imSize.width/2) / m_singleImageSize.width;
+	int image_number_y = (int)(move.at<double>(1,2) + (double)imSize.height/2) / m_singleImageSize.height;
+
+	//величина, обозначающая на сколько изображений по х (в положительном направлении, относительно изображения, где расположен центр 
+	//кадра) размещенный кадр "вылезает" за границы изображения, где расположен центр кадра 
+	int over_x = (x_center_coordinate+(int)relativeCoordinates[0])/m_singleImageSize.width;
+	if ((x_center_coordinate+(int)relativeCoordinates[0]) % m_singleImageSize.width == 0){
+		over_x-=1;
+	}
+	//аналогично over_x, но только в отрицательном направлении
+	int under_x = 0;
+	if (x_center_coordinate+(int)relativeCoordinates[1] < 0) {
+		if ((x_center_coordinate+(int)relativeCoordinates[1]) % m_singleImageSize.width == 0){
+			under_x = (x_center_coordinate+(int)relativeCoordinates[1])/m_singleImageSize.width;
+		} else {
+			under_x = (x_center_coordinate+(int)relativeCoordinates[1])/m_singleImageSize.width - 1;
+		}
+
+	}
+	//аналогично over_x, но только для y
+	int over_y = (y_center_coordinate+(int)relativeCoordinates[2])/m_singleImageSize.height;
+	if ((y_center_coordinate+(int)relativeCoordinates[2]) % m_singleImageSize.height == 0){
+		over_y-=1;
+	}
+
+	int under_y = 0;
+	if (y_center_coordinate+(int)relativeCoordinates[3] < 0){
+		if ((y_center_coordinate+(int)relativeCoordinates[3]) % m_singleImageSize.height == 0){
+            under_y = (y_center_coordinate+(int)relativeCoordinates[3])/m_singleImageSize.height;
+		} else {
+			under_y = (y_center_coordinate+(int)relativeCoordinates[3])/m_singleImageSize.height - 1;
 		}
 	}
-	//m_result = Mat(m_singleImageSize,CV_8UC1);
+	//заполняем image_number номерами изображений, где может быть расположен кадр (каждому кадру соответсвует свой вектор номеров изображений)
+	image_number.push_back({});
+
+	for (int i = under_x; i <= over_x; ++i){
+		for (int j = under_y; j <= over_y; ++j){
+			image_number[iterator].push_back(make_pair(i+image_number_x,j+image_number_y));
+		}
+	}
+	iterator++;
+	return;
+}
+
+void SingleFrameStitcher::CreatePanno(cv::Mat image, cv::Mat origin){
+	//создаем основу для расположения кадров
+	//метод Mat(m_singleImageSize, CV_8UC1) был заменен на Mat::zeros(m_singleImageSize, CV_8UC1), т.к. если не прописывать
+	//какие значения должны хранится в матрице, то для CV_8UC1 по умолчанию создается серое изображение(конкретно на моем устройстве)
+	for (int i = 0; i < count_x; ++i){
+		m_result.push_back({});
+		for (int j =0; j < count_y; ++j){
+			m_result[i].push_back(Mat::zeros(m_singleImageSize, CV_8UC1));
+		}
+	}
+	iterator = 0;
 	cv::Mat current, tmp, mask;
 	cv::cvtColor(image, current, cv::COLOR_BGR2GRAY);
-	cv::warpPerspective(current,tmp, origin, m_singleImageSize);
-	auto kernElem=cv::getStructuringElement(cv::MORPH_CROSS, cv::Size(3,3));
-	cv::compare(tmp,0,mask,cv::CMP_GT);
-	cv::erode(mask,mask, kernElem, cv::Point(-1,-1),5); 
-	cv::add(tmp,0,m_result,mask);
+	//перебирая все номера изображений, доклеиваем к ним части кадра, т.е. проходим однократно по всем кадрам и многократно по изображениям
+	for (auto i : image_number[iterator]){
+		cv::Mat new_origin = origin.clone();
+		new_origin.at<double>(0,2) -= m_singleImageSize.width*i.first;
+		new_origin.at<double>(1,2) -= m_singleImageSize.height*i.second;
+		cv::warpPerspective(current,tmp, new_origin, m_singleImageSize);
+	    auto kernElem=cv::getStructuringElement(cv::MORPH_CROSS, cv::Size(3,3));
+	    cv::compare(tmp,0,mask,cv::CMP_GT);
+	    cv::erode(mask,mask, kernElem, cv::Point(-1,-1),5); 
+	    cv::add(tmp,0,m_result[i.first][i.second],mask);
+	}
 }
 
 void SingleFrameStitcher::AppendToPanno(cv::Mat image, cv::Mat origin)
@@ -182,20 +199,27 @@ void SingleFrameStitcher::AppendToPanno(cv::Mat image, cv::Mat origin)
 		throw std::runtime_error("Panno not created yet!");
 	Mat grey, tmp, mask;
 	cv::cvtColor(image, grey, cv::COLOR_BGR2GRAY);
-	cv::Mat trans = origin.clone();
-	trans.pop_back();
-	cv::warpAffine(grey, tmp, trans, m_result.size());	
-	cv::compare(tmp,0,mask, cv::CMP_GT);
-	auto kernElem=cv::getStructuringElement(cv::MORPH_CROSS, cv::Size(3,3));
-	cv::erode(mask,mask, kernElem, cv::Point(-1,-1),5);
-	cv::Mat tmp2;
-	cv::compare(m_result,0,tmp2,cv::CMP_GT);
-	mask = mask & (~tmp2);
-	makeSumm(tmp, m_result,  m_result, mask);
+	++iterator;
+	for (auto i : image_number[iterator]){
+		cv::Mat trans = origin.clone();
+	    trans.pop_back();
+		trans.at<double>(0,2) -= m_singleImageSize.width*i.first;
+		trans.at<double>(1,2) -= m_singleImageSize.height*i.second;
+	    cv::warpAffine(grey, tmp, trans, m_singleImageSize);	
+	    cv::compare(tmp,0,mask, cv::CMP_GT);
+	    auto kernElem=cv::getStructuringElement(cv::MORPH_CROSS, cv::Size(3,3));
+	    cv::erode(mask,mask, kernElem, cv::Point(-1,-1),5);
+	    cv::Mat tmp2;
+	    cv::compare(m_result[i.first][i.second],0,tmp2,cv::CMP_GT);
+	    mask = mask & (~tmp2);
+	    makeSumm(tmp, m_result[i.first][i.second], m_result[i.first][i.second], mask);
+	}
 }
 
 void SingleFrameStitcher::SaveImage(std::string filename)
 {
+	//создаем папку result, в которой будут храниться результаты работы программы
+	//если папка уже была создана, то файлы будут сохраняться в той же папке
 	if(_mkdir("./result") == -1)
         cerr << " Error Occured : " << strerror(errno) << endl;
     else
@@ -204,8 +228,7 @@ void SingleFrameStitcher::SaveImage(std::string filename)
 		for (int j = 0; j < count_y; ++j){
 			std::stringstream out_name;
 			out_name << "./" << "result/" << filename << i << "_" << j << ".png";
-			cv::imwrite( out_name.str(), m_result);
-			cv::imwrite("./result/raw.png", new_m_result[0][0]);
+			cv::imwrite( out_name.str(), m_result[i][j]);
 		}
 	}
 }

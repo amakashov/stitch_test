@@ -29,6 +29,7 @@ int main(int argc, char* argv[])
 	cv::CommandLineParser parser(argc, argv, keys);
 	
 	std::string videoName = parser.get<std::string>(0);
+	//обработка test1.avi по умолчанию
 	if (videoName.empty())
 	{
 		videoName = "test1.avi";
@@ -37,6 +38,7 @@ int main(int argc, char* argv[])
 	std::cout << "Will write result in " << outName << ".png" << std::endl;
 	maxFrames = parser.get<int>("N");
 	float threshold = parser.get<float>("t");
+	//ввод размеров итоговых изображений
 	int resultSizeX = parser.get<int>("x");
 	int resultSizeY = parser.get<int>("y");
 

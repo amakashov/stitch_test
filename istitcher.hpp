@@ -13,4 +13,5 @@ public:
     virtual void AppendToPanno(cv::Mat image, cv::Mat origin) = 0;
     virtual void SaveImage(std::string filename) = 0;
     virtual std::vector<double> CornerCoordinatesCounter (const cv::Mat &cadr, cv::Size imSize) = 0;
+    virtual void ImageNumberFiller (cv::Mat &move, cv::Size imSize) = 0;
 };
