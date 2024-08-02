@@ -81,10 +81,10 @@ std::vector<double> SingleFrameStitcher::CornerCoordinatesCounter(const cv::Mat 
 	relative_max_min_x_y.push_back(relativeMinX);
 
 	//аналогично х
-	corners_coordinates_y.push_back((imSize.width/2)*cadr.at<double>(1,0) +  (imSize.height/2)*cadr.at<double>(1,1));
-	corners_coordinates_y.push_back((-imSize.width/2)*cadr.at<double>(1,0) +  (imSize.height/2)*cadr.at<double>(1,1));
-	corners_coordinates_y.push_back((-imSize.width/2)*cadr.at<double>(1,0) +  (-imSize.height/2)*cadr.at<double>(1,1));
-	corners_coordinates_y.push_back((imSize.width/2)*cadr.at<double>(1,0) +  (-imSize.height/2)*cadr.at<double>(1,1));
+	corners_coordinates_y.push_back(((double)imSize.width/2)*cadr.at<double>(1,0) +  ((double)imSize.height/2)*cadr.at<double>(1,1));
+	corners_coordinates_y.push_back((-(double)imSize.width/2)*cadr.at<double>(1,0) +  ((double)imSize.height/2)*cadr.at<double>(1,1));
+	corners_coordinates_y.push_back((-(double)imSize.width/2)*cadr.at<double>(1,0) +  (-(double)imSize.height/2)*cadr.at<double>(1,1));
+	corners_coordinates_y.push_back(((double)imSize.width/2)*cadr.at<double>(1,0) +  (-(double)imSize.height/2)*cadr.at<double>(1,1));
 
 	for (int i = 0; i < corners_coordinates_y.size(); ++i){
 		if (corners_coordinates_y[i] > relativeMaxY)
