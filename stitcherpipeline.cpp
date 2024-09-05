@@ -26,7 +26,8 @@ StitcherPipeline::StitcherPipeline(float threshold, int octaves)
 	m_stitcher = make_shared<SingleFrameStitcher>("new_result.png");
 }
 
-int StitcherPipeline::ProcessVideo(std::string fileName, long long to, cv::Size resultImageSize)
+int StitcherPipeline::ProcessVideo(std::string fileName, long long to, cv::Size resultImageSize, double scaleX, double scaleY, 
+	int srsEPSG, int outEPSG, OGRPoint upper_left_coord)
 {
 	Mat first, second;
 	FeatureInfo firstInfo, secondInfo;
@@ -85,8 +86,8 @@ int StitcherPipeline::ProcessVideo(std::string fileName, long long to, cv::Size 
 		second = Mat(second, cropRect);
 		m_stitcher->AppendToPanno(second, *(from++));
 	}
-	cout << "Saving image to " << m_outFile << ".png" << "..." << endl;
-	m_stitcher->SaveImage(m_outFile);
+	cout << "Saving image to " << m_outFile << ".tiff" << "..." << endl;
+	m_stitcher->SaveImage(m_outFile, scaleX, scaleY, srsEPSG, outEPSG, upper_left_coord);
 
 	return 0;
 }

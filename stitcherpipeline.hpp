@@ -26,7 +26,8 @@ protected:
 	std::string m_outFile;
 
 public:
-	int ProcessVideo(std::string fileName, long long to = -1, cv::Size resultImageSize = cv::Size(0,0));
+	int ProcessVideo(std::string fileName, long long to = -1, cv::Size resultImageSize = cv::Size(0,0), double scaleX = 1, double scaleY = 1, 
+	int srsEPSG = 3857, int outEPSG = 3395, OGRPoint upper_left_coord = OGRPoint(4174448.528, 7443410.282));
 	void setOutput(std::string fName) {m_outFile = fName;};
 };
 

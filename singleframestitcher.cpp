@@ -33,7 +33,7 @@ void SingleFrameStitcher::ImageCounter(std::vector<cv::Mat> &movems, cv::Size im
 		if(cadr.at<double>(1,2)+relativeCoordinates[3]<minY)
 			minY=cadr.at<double>(1,2)+relativeCoordinates[3];
 	}
-	//в вычислении размера полного изображения добавлено округление в большую сторону (так размешенные кадры точно не должны обрезаться
+	//в вычислении размера полного изображения добавлено округление в большую сторону (так размещенные кадры точно не должны обрезаться
 	//- видно на примере склейки test1.avi)
 	sizeX= (int)ceil(maxX-minX);
 	sizeY= (int)ceil(maxY-minY);
@@ -216,8 +216,10 @@ void SingleFrameStitcher::AppendToPanno(cv::Mat image, cv::Mat origin)
 	}
 }
 
-void SingleFrameStitcher::SaveImage(std::string filename)
+void SingleFrameStitcher::SaveImage(std::string filename, double scaleX, double scaleY, 
+	int srsEPSG, int outEPSG, OGRPoint upper_left_coord)
 {
+	GeoTransform geos(scaleX, scaleY, srsEPSG, outEPSG, upper_left_coord);
 	//создаем папку result, в которой будут храниться результаты работы программы
 	//если папка уже была создана, то файлы будут сохраняться в той же папке
 	if(_mkdir("./result") == -1)
@@ -227,8 +229,9 @@ void SingleFrameStitcher::SaveImage(std::string filename)
 	for (int i = 0; i < count_x; ++i){
 		for (int j = 0; j < count_y; ++j){
 			std::stringstream out_name;
-			out_name << "./" << "result/" << filename << i << "_" << j << ".png";
+			out_name << "./" << "result/" << filename << i << "_" << j << ".tiff";
 			cv::imwrite( out_name.str(), m_result[i][j]);
+			geos.GeoConverter(out_name.str(), i, j);
 		}
 	}
 }

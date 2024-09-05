@@ -3,7 +3,7 @@
 #include <string>
 #include <opencv2/calib3d.hpp>
 #include "istitcher.hpp"
-#include <map>
+#include "geotransform.hpp"
 
 class SingleFrameStitcher : public IStitcher
 {
@@ -13,7 +13,8 @@ public:
     virtual void RetranslateToOrigin(std::vector<cv::Mat>& movems, cv::Size imSize) override;
     virtual void CreatePanno(cv::Mat image, cv::Mat origin) override;
     virtual void AppendToPanno(cv::Mat image, cv::Mat origin) override;
-    virtual void SaveImage(std::string filename) override;
+    virtual void SaveImage(std::string filename, double scaleX, double scaleY, 
+	int srsEPSG, int outEPSG, OGRPoint upper_left_coord) override;
     virtual std::vector<double> CornerCoordinatesCounter (const cv::Mat &move, cv::Size imSize) override;
     virtual void ImageNumberFiller (cv::Mat &move, cv::Size imSize) override;
 
