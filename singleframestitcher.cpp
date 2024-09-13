@@ -229,7 +229,7 @@ void SingleFrameStitcher::SaveImage(std::string filename, double scaleX, double 
 	for (int i = 0; i < count_x; ++i){
 		for (int j = 0; j < count_y; ++j){
 			std::stringstream out_name;
-			out_name << "./" << "result/" << filename << i << "_" << j << ".tiff";
+			out_name << "./" << "result/" << filename << ".tiff";
 			cv::imwrite( out_name.str(), m_result[i][j]);
 			geos.GeoConverter(out_name.str(), i, j);
 		}
