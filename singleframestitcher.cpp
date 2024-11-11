@@ -21,7 +21,7 @@ void SingleFrameStitcher::ImageCounter(std::vector<cv::Mat> &movems, cv::Size im
 
 	for (auto const & cadr : movems)
 	{
-		//отдельно вынесен метод расчет координат углов кадров относительно центров кадров
+		//отдельно вынесен метод расчета координат углов кадров относительно центров кадров
 		vector<double> relativeCoordinates = CornerCoordinatesCounter (cadr,imSize);
 
 		if(cadr.at<double>(0,2)+relativeCoordinates[0]>maxX)
@@ -216,10 +216,8 @@ void SingleFrameStitcher::AppendToPanno(cv::Mat image, cv::Mat origin)
 	}
 }
 
-void SingleFrameStitcher::SaveImage(std::string filename, double scaleX, double scaleY, 
-	int srsEPSG, int outEPSG, OGRPoint upper_left_coord)
+void SingleFrameStitcher::SaveImage(GeoTransform & m_geotransform, std::string filename, OGRPoint upper_left_coord)
 {
-	GeoTransform geos(scaleX, scaleY, srsEPSG, outEPSG, upper_left_coord);
 	//создаем папку result, в которой будут храниться результаты работы программы
 	//если папка уже была создана, то файлы будут сохраняться в той же папке
 	if(_mkdir("./result") == -1)
@@ -229,9 +227,9 @@ void SingleFrameStitcher::SaveImage(std::string filename, double scaleX, double 
 	for (int i = 0; i < count_x; ++i){
 		for (int j = 0; j < count_y; ++j){
 			std::stringstream out_name;
-			out_name << "./" << "result/" << filename << ".tiff";
+			out_name << "./" << "result/" << filename << i*count_y + j <<  ".tiff";
 			cv::imwrite( out_name.str(), m_result[i][j]);
-			geos.GeoConverter(out_name.str(), i, j);
+			m_geotransform.GeoConverter(out_name.str(), i, j, upper_left_coord);
 		}
 	}
 }

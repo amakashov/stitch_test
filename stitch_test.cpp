@@ -19,12 +19,11 @@ const cv::String keys =
  "{t threshold |30 | threshold for stitcher }"
  "{x resultSizeX |0 | result x size of output images}"
  "{y resultSizeY |0 | result y size of output images}"
- "{x_scl scaleX |1 | pixel scale on x axis}"
- "{y_scl scaleY |1 | pixel scale on y axis}"
- "{srs srsEPSG |3857 | EPSG for source upper left coordinates}"
- "{out outEPSG |3395 | output EPSG for all images}"
- "{ulx upper_left_x |4174448.528 | upper left coordinate on x axis}"
- "{uly upper_left_y |7443410.282 | upper left coordinate on y axis}"
+ "{srs srsEPSG |32637 | EPSG for source upper left coordinates}"
+ "{out outEPSG |32637 | output EPSG for all images}"
+ "{ulx upper_left_x |394274.989 | upper left coordinate on x axis}"
+ "{uly upper_left_y |6100101.297 | upper left coordinate on y axis}"
+ "{srt srtName | | srt file for video to stitch}"
 ;
 
 int main(int argc, char* argv[])
@@ -48,17 +47,13 @@ int main(int argc, char* argv[])
 	int resultSizeX = parser.get<int>("x");
 	int resultSizeY = parser.get<int>("y");
 
-	double scaleX = parser.get<double>("x_scl");
-	double scaleY = parser.get<double>("y_scl");
-
 	int srsEPSG = parser.get<int>("srs");
 	int outEPSG = parser.get<int>("out");
 
 	double upper_left_x = parser.get<double>("ulx");
-	double upper_left_y = parser.get<double>("uly");
-	OGRPoint upper_left_coord;
-	upper_left_coord.setX(upper_left_x);
-	upper_left_coord.setY(upper_left_y); 
+	double upper_left_y = parser.get<double>("uly"); 
+
+	std::string srtName =  parser.get<std::string>("srtName");
 
 	cv::Size resultSize = cv::Size(resultSizeX, resultSizeY);
 
@@ -67,7 +62,6 @@ int main(int argc, char* argv[])
 	StitcherPipeline stitch (threshold);
 	stitch.setOutput(outName);
 
-	stitch.ProcessVideo(videoName, maxFrames, resultSize, scaleX, scaleY, srsEPSG, outEPSG, upper_left_coord);
+	stitch.ProcessVideo(videoName, maxFrames, resultSize, srsEPSG, outEPSG, OGRPoint(upper_left_x, upper_left_y), srtName );
  	return 0;
 }
-

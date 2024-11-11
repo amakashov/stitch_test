@@ -26,8 +26,8 @@ StitcherPipeline::StitcherPipeline(float threshold, int octaves)
 	m_stitcher = make_shared<SingleFrameStitcher>("new_result.png");
 }
 
-int StitcherPipeline::ProcessVideo(std::string fileName, long long to, cv::Size resultImageSize, double scaleX, double scaleY, 
-	int srsEPSG, int outEPSG, OGRPoint upper_left_coord)
+int StitcherPipeline::ProcessVideo(std::string fileName, long long to, cv::Size resultImageSize,
+int srsEPSG, int outEPSG, OGRPoint upper_left_coord, std::string srtName)
 {
 	Mat first, second;
 	FeatureInfo firstInfo, secondInfo;
@@ -86,8 +86,14 @@ int StitcherPipeline::ProcessVideo(std::string fileName, long long to, cv::Size 
 		second = Mat(second, cropRect);
 		m_stitcher->AppendToPanno(second, *(from++));
 	}
+	GeoTransform m_geotransform(srsEPSG, outEPSG);
+	m_geotransform.ScaleCounter(movems);
+	if (!srtName.empty()){
+		ImageData srt_info; 
+		srt_info.SRTHandler(srtName, m_geotransform);
+	}
 	cout << "Saving image to " << m_outFile << ".tiff" << "..." << endl;
-	m_stitcher->SaveImage(m_outFile, scaleX, scaleY, srsEPSG, outEPSG, upper_left_coord);
+	m_stitcher->SaveImage(m_geotransform, m_outFile, upper_left_coord);
 
 	return 0;
 }

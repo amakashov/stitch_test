@@ -12,12 +12,14 @@ include_directories(${OpenCV_INCLUDE_DIRS} )
 message("OpenCV include dir ${OpenCV_INCLUDE_DIRS}")
 
 find_package(GDAL CONFIG REQUIRED)
+find_package(GeographicLib CONFIG REQUIRED)
 
 file(GLOB src *.cpp *.hpp)
 add_executable(stitch_test ${src})
 target_include_directories(stitch_test PRIVATE ${OpenCV_INCLUDE_DIRS} )
 target_link_libraries(stitch_test PUBLIC ${OpenCV_LIBS} )
 target_link_libraries(stitch_test PRIVATE GDAL::GDAL)
+target_link_libraries(stitch_test PRIVATE GeographicLib::GeographicLib)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

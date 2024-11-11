@@ -10,6 +10,7 @@
 #include "frameprocessor.hpp"
 #include "movesetimator.hpp"
 #include "singleframestitcher.hpp"
+#include "geotransform.hpp"
 
 class StitcherPipeline
 {
@@ -26,8 +27,8 @@ protected:
 	std::string m_outFile;
 
 public:
-	int ProcessVideo(std::string fileName, long long to = -1, cv::Size resultImageSize = cv::Size(0,0), double scaleX = 1, double scaleY = 1, 
-	int srsEPSG = 3857, int outEPSG = 3395, OGRPoint upper_left_coord = OGRPoint(4174448.528, 7443410.282));
+	int ProcessVideo(std::string fileName, long long to = -1, cv::Size resultImageSize = cv::Size(0,0),
+	int srsEPSG = 32637, int outEPSG = 32637, OGRPoint upper_left_coord = OGRPoint(394274.989, 6100101.297), std::string srtName = "");
 	void setOutput(std::string fName) {m_outFile = fName;};
 };
 

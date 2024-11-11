@@ -2,6 +2,8 @@
 
 #include <opencv2/opencv.hpp>
 #include <vector>
+#include <fstream>
+#include "geotransform.hpp"
 
 class ImageData
 {
@@ -16,9 +18,12 @@ public:
 	void SetMatches(std::vector<cv::DMatch> matches) {m_Matches=matches;}
 	void SetMatches(std::vector<cv::DMatch> matches, std::vector<std::vector<cv::DMatch>> knnMatches) {m_Matches=matches; m_knnMatches = knnMatches;}
 	std::vector<cv::DMatch> Matches() const {return m_Matches;}
-
+	void SRTHandler (std::string srt_name, GeoTransform & m_geotransform);
 
 protected:
+    OGRPoint GettingMeterCoordinates (std::string sentence);
+	std::pair<double,double> GettingReperCoordinates (std::string sentence);
+
 	std::vector<cv::KeyPoint> m_KeypointsFirst, m_KeypointsSecond;
 	std::vector<cv::DMatch> m_Matches;
 	std::vector<std::vector<cv::DMatch>> m_knnMatches;
