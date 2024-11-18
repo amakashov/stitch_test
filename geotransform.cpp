@@ -114,14 +114,21 @@ void GeoTransform::SetSRTInfo(std::pair<double, double> &reper_center_coord, std
     std::pair<double, double> center_coord_gauss;
     std::pair<double, double> lat_lon_absolut;
     std::pair<double, double> utm_absolut;
+    std::pair<double, double> gauss_absolut;
+    //получаем координаты центра в метрах (Гаусс-Крюгер и UTM37N)
     FromLatLonToMetres(reper_center_coord.first, reper_center_coord.second, center_coord_gauss.first, center_coord_gauss.second, "Gauss_Kruger");
     FromLatLonToMetres(reper_center_coord.first, reper_center_coord.second, center_coord_utm.first, center_coord_utm.second, "UTM");
     for (auto & i : srt_displacement){
-        OGRPoint gauss_absolut = OGRPoint(i.getX()+center_coord_gauss.first, i.getY()+center_coord_gauss.second);
-        FromMeteresToLatLon(39, gauss_absolut.getX(), gauss_absolut.getY(), lat_lon_absolut.first, lat_lon_absolut.second, "Gauss_Kruger");
+        //вычисляем абсолютные метрические координаты в Гаусс-Крюгере
+        gauss_absolut = std::make_pair(i.getX()+center_coord_gauss.first, i.getY()+center_coord_gauss.second);
+        //преобразовываем абсолютные метрические координаты обратно в градусные
+        FromMeteresToLatLon(39, gauss_absolut.first, gauss_absolut.second, lat_lon_absolut.first, lat_lon_absolut.second, "Gauss_Kruger");
+        //градусные координаты переводит в метрические UTM
         FromLatLonToMetres(lat_lon_absolut.first, lat_lon_absolut.second, utm_absolut.first, utm_absolut.second, "UTM");
+        //записываем в переменную displacement перемещения относительно репера в метрических координатах UTM
         displacement.push_back(OGRPoint(utm_absolut.first - center_coord_utm.first, utm_absolut.first - center_coord_utm.second));
     }
+    //вычисляем абсолютные координаты центра первого кадра в метрических координатах UTM
     center_coord_utm.first += displacement[0].getX(); 
     center_coord_utm.second += displacement[0].getY(); 
 }
@@ -150,7 +157,7 @@ void GeoTransform::GeoConverter (std::string path, int col, int row, OGRPoint up
         upper_left_coord = TransformPoint(upper_left_coord.getX(), upper_left_coord.getY(), &srs, &outsrs);
     }
     else { 
-        upper_left_coord = TransformPoint(upp_left_coord.getX() , upp_left_coord.getY() , &srs, &outsrs);
+        upper_left_coord = TransformPoint(6102649.296 , 7394230.918 , &srs, &outsrs);
     }
     
     upper_left_coord.setX(upper_left_coord.getX() + x_count_of_rastr*x_scale*col);
