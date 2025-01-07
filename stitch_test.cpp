@@ -6,10 +6,10 @@
 #include <string>
 
 #include <opencv2/opencv.hpp>
-#include <opencv2/xfeatures2d.hpp>
+// #include <opencv2/xfeatures2d.hpp>
 //#include <opencv2\stitching\stitcher.hpp>
 
-#include "Stitcher.h"
+#include "stitcherpipeline.hpp"
 // First, add this necessary using
 #include <opencv2/core/utils/logger.hpp>
 #include <opencv2/core/utility.hpp>
@@ -37,28 +37,12 @@ int main(int argc, char* argv[])
 	maxFrames = parser.get<int>("N");
 	float threshold = parser.get<float>("t");
 
-	CStitcher stitch (std::string("BRISK"),
-					cv::BRISK::create(threshold, 3),
-					cv::BRISK::create(threshold,3),
-					new cv::BFMatcher(cv::NORM_L2));
+	std::cout << "Threshold " << threshold << std::endl;
+
+	StitcherPipeline stitch (threshold);
 	stitch.setOutput(outName);
-	// CStitcher stitch (std::string("SURF"),
-	// 				cv::xfeatures2d::SurfFeatureDetector::create(150.,4),
-	// 				cv::xfeatures2d::SurfDescriptorExtractor::create(150.,4),
-	// 				new cv::BFMatcher(cv::NORM_L2));
-/*
-	CStitcher stitch ("SIFT",
-					  new cv::SiftFeatureDetector(90.,8),
-					  new cv::SiftDescriptorExtractor(90.,8),
-					  new cv::BFMatcher(cv::NORM_L2));
-*/
-	if (stitch.InitImageSequence(videoName, maxFrames)==-1)
-		return 0;
-	stitch.MakeEnhancement();
-	stitch.MakeMatches();
-	cv::Size resSize=stitch.CalcResultSize();
-	std::cout <<"Resulting image size " << resSize.height<< "x" <<resSize.width << std::endl;
-	stitch.CreateMosaic(resSize);
+
+	stitch.ProcessVideo(videoName, maxFrames);
  	return 0;
 }
 
