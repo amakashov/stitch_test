@@ -32,6 +32,8 @@ void SingleFrameStitcher::ImageCounter(std::vector<cv::Mat> &movems, cv::Size im
 			maxY=cadr.at<double>(1,2)+relativeCoordinates[2];
 		if(cadr.at<double>(1,2)+relativeCoordinates[3]<minY)
 			minY=cadr.at<double>(1,2)+relativeCoordinates[3];
+		// maxY сравниваем с relativeCoordinates[2], а minY с relativeCoordinates[3] т.к. направление оси y в СК кадра и 
+		// СК склеенного изображения противоположны по направлению, а значения relativeCoordinates равны и противоположны по значению 
 	}
 	//в вычислении размера полного изображения добавлено округление в большую сторону (так размещенные кадры точно не должны обрезаться
 	//- видно на примере склейки test1.avi)
@@ -39,6 +41,9 @@ void SingleFrameStitcher::ImageCounter(std::vector<cv::Mat> &movems, cv::Size im
 	sizeY= (int)ceil(maxY-minY);
 	m_origin.x = (int)floor(minX + (double)imSize.width/2);
 	m_origin.y = (int)floor(minY + (double)imSize.height/2);
+
+	upper_left_coord_in_pixels.first = minX;
+	upper_left_coord_in_pixels.second = minY;
 
 	if (!(resultImageSize == Size(0,0))){
 		m_singleImageSize = resultImageSize;
@@ -68,7 +73,7 @@ std::vector<double> SingleFrameStitcher::CornerCoordinatesCounter(const cv::Mat 
 	corners_coordinates_x.push_back((-(double)imSize.width/2)*cadr.at<double>(0,0) +  (-(double)imSize.height/2)*cadr.at<double>(0,1));
 	corners_coordinates_x.push_back(((double)imSize.width/2)*cadr.at<double>(0,0) +  (-(double)imSize.height/2)*cadr.at<double>(0,1));
 
-	//находим максимальное и минимальное значения среди посчитанных координат
+	//находим максимальное и минимальное значения среди посчитанных координат;
 	for (int i = 0; i < corners_coordinates_x.size(); ++i){
 		if (corners_coordinates_x[i] > relativeMaxX)
 			relativeMaxX = corners_coordinates_x[i];
@@ -227,9 +232,9 @@ void SingleFrameStitcher::SaveImage(GeoTransform & m_geotransform, std::string f
 	for (int i = 0; i < count_x; ++i){
 		for (int j = 0; j < count_y; ++j){
 			std::stringstream out_name;
-			out_name << "./" << "result/" << filename << i*count_y + j <<  ".tiff";
+			out_name << "./" << "result/with_srt/" << filename << i*count_y + j <<  ".tiff";
 			cv::imwrite( out_name.str(), m_result[i][j]);
-			m_geotransform.GeoConverter(out_name.str(), i, j, upper_left_coord);
+			m_geotransform.GeoConverter(out_name.str(), i, j, upper_left_coord, upper_left_coord_in_pixels);
 		}
 	}
 }

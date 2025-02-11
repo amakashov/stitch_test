@@ -15,15 +15,16 @@ const cv::String keys =
  "{help h usage ? | | print this message }"
  "{@videoSrc | | video to stitch }"
  "{@outFile | result| stitched image }"
+ "{@srtName | | srt file for video to stitch}"
  "{N count |-1 | count of frames to stitch }"
  "{t threshold |30 | threshold for stitcher }"
  "{x resultSizeX |0 | result x size of output images}"
  "{y resultSizeY |0 | result y size of output images}"
  "{srs srsEPSG |32637 | EPSG for source upper left coordinates}"
  "{out outEPSG |32637 | output EPSG for all images}"
- "{ulx upper_left_x |394274.989 | upper left coordinate on x axis}"
- "{uly upper_left_y |6100101.297 | upper left coordinate on y axis}"
- "{srt srtName | | srt file for video to stitch}"
+ "{ulx upper_left_x |405032.650 | upper left coordinate on x axis}"
+ "{uly upper_left_y |6142327.213 | upper left coordinate on y axis}"
+ //"{srt srtName | | srt file for video to stitch}"
 ;
 
 int main(int argc, char* argv[])
@@ -40,6 +41,7 @@ int main(int argc, char* argv[])
 		videoName = "test1.avi";
 	}
 	auto outName = parser.get<std::string>(1);
+	std::string srtName = parser.get<std::string>(2);
 	std::cout << "Will write result in " << outName << ".tiff" << std::endl;
 	maxFrames = parser.get<int>("N");
 	float threshold = parser.get<float>("t");
@@ -53,7 +55,7 @@ int main(int argc, char* argv[])
 	double upper_left_x = parser.get<double>("ulx");
 	double upper_left_y = parser.get<double>("uly"); 
 
-	std::string srtName =  parser.get<std::string>("srtName");
+	//std::string srtName =  parser.get<std::string>("srt");
 
 	cv::Size resultSize = cv::Size(resultSizeX, resultSizeY);
 

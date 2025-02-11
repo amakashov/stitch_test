@@ -11,41 +11,28 @@ ImageData::~ImageData(void)
 
 OGRPoint ImageData::GettingMeterCoordinates (std::string sentence){
 
-	std::string northDeg;
-	std::string northMin;
-    std::string eastDeg;
-	std::string eastMin;
+	std::string northMetres;
+    std::string eastMetres;
 
 	const char* stroka = sentence.c_str();
     while (*stroka!='\0'){
-        if (*stroka == 'A'){
-            stroka+=2;
-            northDeg = *stroka;
+        if (*stroka == 'E'){
+            stroka+=3;
+            northMetres = *stroka;
             stroka++;
-			northDeg+=*stroka;
-			stroka++;
-			northMin = *stroka;
-			stroka++;
             while (*stroka !=','){
-                northMin+=*stroka;
+                northMetres+=*stroka;
 				stroka++;
             }
-			double northDouble = stod(northDeg)+stod(northMin)/60;
+			double northDouble = stod(northMetres);
 			stroka+=3;
-            eastDeg = *stroka;
+            eastMetres = *stroka;
             stroka++;
-			eastDeg += *stroka;
-            stroka++;
-			eastDeg += *stroka;
-            stroka++;
-			eastMin = *stroka;
-			stroka++;
             while (*stroka !=','){
-                eastMin+=*stroka;
+                eastMetres+=*stroka;
 				stroka++;
             }
-			double eastDouble = stod(eastDeg)+stod(eastMin)/60;
-			std::cout << northDouble << "  " << eastDouble << std::endl;
+			double eastDouble = stod(eastMetres);
 			return OGRPoint(northDouble,eastDouble);
         }
         stroka++;
@@ -56,9 +43,7 @@ OGRPoint ImageData::GettingMeterCoordinates (std::string sentence){
 std::pair<double, double> ImageData::GettingReperCoordinates(std::string sentence)
 {
 	std::string northDeg;
-	std::string northMin;
     std::string eastDeg;
-	std::string eastMin;
 
 	const char* stroka = sentence.c_str();
     while (*stroka!='\0'){
@@ -66,30 +51,19 @@ std::pair<double, double> ImageData::GettingReperCoordinates(std::string sentenc
             stroka+=2;
             northDeg = *stroka;
             stroka++;
-			northDeg+=*stroka;
-			stroka++;
-			northMin = *stroka;
-			stroka++;
             while (*stroka !=','){
-                northMin+=*stroka;
+                northDeg+=*stroka;
 				stroka++;
             }
-			double northDouble = stod(northDeg)+stod(northMin)/60;
-			stroka+=3;
+			double northDouble = stod(northDeg);
+			stroka+=4;
             eastDeg = *stroka;
             stroka++;
-			eastDeg += *stroka;
-            stroka++;
-			eastDeg += *stroka;
-            stroka++;
-			eastMin = *stroka;
-			stroka++;
             while (*stroka !=','){
-                eastMin+=*stroka;
+                eastDeg+=*stroka;
 				stroka++;
             }
-			double eastDouble = stod(eastDeg)+stod(eastMin)/60;
-			std::cout << northDouble << "  " << eastDouble << std::endl;
+			double eastDouble = stod(eastDeg);
 			return std::pair<double,double>(northDouble,eastDouble);
         }
         stroka++;

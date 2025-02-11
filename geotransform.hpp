@@ -25,7 +25,8 @@ public:
     GeoTransform(int srssEPSG, int outtEPSG);
     ~GeoTransform(void);
     int EPSGdefiner(GDALDataset *ds);
-    void GeoConverter(std::string path, int col, int row, OGRPoint upp_left_coord);
+    void GeoConverter(std::string path, int col, int row, OGRPoint upp_left_coord, 
+    std::pair<double,double> upper_left_coord_in_pixels);
     void ScaleCounter (std::vector<cv::Mat>& movems);
     void SetSRTInfo (std::pair<double, double> &reper_conter_coord, std::vector<OGRPoint> &srt_displacement);
     int srsEPSG;
@@ -44,7 +45,7 @@ protected:
     std::pair<double, double> center_coord_utm = std::make_pair(0, 0);
     std::vector<OGRPoint> displacement;
     double x_scale = 1;
-    double y_scale = 1;
+    double y_scale = 4;
     // int srsEPSG;
     // int outEPSG;
     int camera_freq = 25; // Гц

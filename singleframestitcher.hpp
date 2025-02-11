@@ -25,6 +25,7 @@ protected:
     cv::Size m_singleImageSize;
     std::vector<std::vector<std::pair<int,int>>> image_number;
     int iterator = 0; 
+    std::pair<double,double> upper_left_coord_in_pixels;
 
 	void makeSumm(cv::InputArray& first, cv::InputArray& second, cv::InputArray& result,
 	 cv::InputArray& mask = cv::noArray());

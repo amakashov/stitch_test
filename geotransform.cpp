@@ -74,10 +74,15 @@ void GeoTransform::ScaleCounter(std::vector<cv::Mat>& movems)
         return;
     }
     int k = 1;
+
+    cv::Mat start = cv::Mat::eye(3,3,CV_64FC1);
+
+	start.at<double>(0,2)=-movems[0].at<double>(0,2);
+	start.at<double>(1,2)=-movems[0].at<double>(1,2);
+
     //устанавливаем начало координат матриц смещений кадров в (0;0): начало координат - центр 1-го кадра
-    for (auto i : movems){
-        i.at<double>(0,2)-=movems[0].at<double>(0,2);
-        i.at<double>(1,2)-=movems[0].at<double>(1,2);
+    for (auto move : movems){
+        move=start*move;
     }
     //переменные для вычисления среднего смещения кадров за 1 секунду
     double x_average = 0;
@@ -87,21 +92,26 @@ void GeoTransform::ScaleCounter(std::vector<cv::Mat>& movems)
     for (int i = 0; i < movems.size(); ++i){
         x_average+= movems[i].at<double>(0,2);
         y_average+= movems[i].at<double>(1,2);
-        if (i % (camera_freq-1) == 0){
+        if ((i % (camera_freq-1) == 0) && i != 0){
             //смещаем начало координат в точку, где произошло прошлое измерение смещения (смотрим каждый раз на смещение только за 1 с) 
-            displacement[k].setX(displacement[k].getX()-displacement[k-1].getX());
-            displacement[k].setY(displacement[k].getY()-displacement[k-1].getY());
+            for (int j = k; j < displacement.size(); ++j){
+                displacement[j].setX(displacement[j].getX()-displacement[k-1].getX());
+                displacement[j].setY(displacement[j].getY()-displacement[k-1].getY());
+            }
             //суммируем все вычисленные масштабы для каждой секунды
             x_scale+= abs(displacement[k].getX() / (x_average/camera_freq));
             y_scale+= abs(displacement[k].getY() / (y_average/camera_freq));
-            ++k;
             x_average = 0;
             y_average = 0;
             //перемещаем начало координат для матриц смещений кадров аналогично данным displacement, полученным с датчиков
-            for (int j = i+1; j < movems.size(); ++j){
-                movems[j].at<double>(0,2)-=movems[i+1].at<double>(0,2);
-                movems[j].at<double>(1,2)-=movems[i+1].at<double>(1,2);
-            } 
+            start.at<double>(0,2)=-movems[i+1].at<double>(0,2);
+	        start.at<double>(1,2)=-movems[i+1].at<double>(1,2);
+            for (auto move : movems){
+                move=start*move;
+            }
+            ++k;
+            if (k == displacement.size())
+                break;
         }
     }
     //вычисляем среднее значение масштаба за все время
@@ -119,7 +129,8 @@ void GeoTransform::SetSRTInfo(std::pair<double, double> &reper_center_coord, std
     center_coord_utm.second += displacement[0].getY(); 
 }
 
-void GeoTransform::GeoConverter (std::string path, int col, int row, OGRPoint upp_left_coord) {
+void GeoTransform::GeoConverter (std::string path, int col, int row, OGRPoint upp_left_coord, 
+                                std::pair<double,double> upper_left_coord_in_pixels) {
 
     GDALAllRegister();
 
@@ -134,17 +145,18 @@ void GeoTransform::GeoConverter (std::string path, int col, int row, OGRPoint up
     // opening of the tiff
     GDALDataset *image = (GDALDataset*)GDALOpen(path.c_str(), GA_Update);
 
-    int x_count_of_rastr = image->GetRasterXSize();
-    int y_count_of_rastr = image->GetRasterYSize();
-
     if (center_coord_utm.first !=0 && center_coord_utm.second !=0){
-        upper_left_coord.setX(center_coord_utm.first  - (x_scale*x_count_of_rastr)/2);
-        upper_left_coord.setY(center_coord_utm.second + (y_scale*y_count_of_rastr)/2);
+        upper_left_coord.setX(center_coord_utm.first  + (x_scale*upper_left_coord_in_pixels.first)); // "+", т.к. upper_left_coord_in_pixels.first отрицателен 
+        upper_left_coord.setY(center_coord_utm.second - (y_scale*upper_left_coord_in_pixels.second));// "-", т.к. upper_left_coord_in_pixels.second отрицателен
+        // и направление оси y в географической СК и пиксельной СК изображения противоположны по направлению
         upper_left_coord = TransformPoint(upper_left_coord.getX(), upper_left_coord.getY(), &srs, &outsrs);
     }
     else { 
         upper_left_coord = TransformPoint(upp_left_coord.getX() , upp_left_coord.getY() , &srs, &outsrs);
     }
+
+    int x_count_of_rastr = image->GetRasterXSize();
+    int y_count_of_rastr = image->GetRasterYSize();
     
     upper_left_coord.setX(upper_left_coord.getX() + x_count_of_rastr*x_scale*col);
     upper_left_coord.setY(upper_left_coord.getY() - y_count_of_rastr*y_scale*row);

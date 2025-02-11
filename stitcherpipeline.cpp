@@ -87,11 +87,11 @@ int srsEPSG, int outEPSG, OGRPoint upper_left_coord, std::string srtName)
 		m_stitcher->AppendToPanno(second, *(from++));
 	}
 	GeoTransform m_geotransform(srsEPSG, outEPSG);
-	m_geotransform.ScaleCounter(movems);
 	if (!srtName.empty()){
 		ImageData srt_info; 
 		srt_info.SRTHandler(srtName, m_geotransform);
 	}
+	m_geotransform.ScaleCounter(movems);
 	cout << "Saving image to " << m_outFile << ".tiff" << "..." << endl;
 	m_stitcher->SaveImage(m_geotransform, m_outFile, upper_left_coord);
 
