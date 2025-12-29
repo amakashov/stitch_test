@@ -20,21 +20,14 @@ static double rad2Deg(double rad){return rad*(180/M_PI);}//Convert radians to de
 static double deg2Rad(double deg){return deg*(M_PI/180);}//Convert degrees to radians
 
 
-StitcherPipeline::StitcherPipeline(int threshold, int octaves)
+StitcherPipeline::StitcherPipeline(float threshold, int octaves)
 	: m_frameProcessor("BRISK", threshold, octaves)
 {
-//	pClahe = cv::createCLAHE(3, cv::Size(16,16));
-	pClahe = cv::createCLAHE(40, cv::Size(8,8));
-	m_Name ="Default";
 	m_stitcher = make_shared<SingleFrameStitcher>("new_result.png");
 }
 
-StitcherPipeline::~StitcherPipeline(void)
-{
-
-}
-
-int StitcherPipeline::ProcessVideo(std::string fileName, long long to, long long skip)
+int StitcherPipeline::ProcessVideo(std::string fileName, long long to, cv::Size resultImageSize,
+int srsEPSG, int outEPSG, OGRPoint upper_left_coord, std::string srtName)
 {
 	Mat first, second;
 	FeatureInfo firstInfo, secondInfo;
@@ -63,7 +56,6 @@ int StitcherPipeline::ProcessVideo(std::string fileName, long long to, long long
 		cap >> second;
 		second = Mat(second, cropRect);
 		cnt++;
-		// secondInfo = m_frameProcessor.GetKeypointData(second);
 		auto result = m_frameProcessor.MatchImages(first, firstInfo, second, secondInfo);
 		m_matchedData.push_back(result);
 	}
@@ -75,8 +67,8 @@ int StitcherPipeline::ProcessVideo(std::string fileName, long long to, long long
 	}
 	auto movems = m_estimator.GetMovements();
 	cout << "Calculating size..." << endl;
-	auto resSize = m_stitcher->CalculateSize(movems, imageSize);
-	m_stitcher->RetranslateToOrigin(movems);
+	m_stitcher->ImageCounter(movems, imageSize, resultImageSize);
+	m_stitcher->RetranslateToOrigin(movems, imageSize);
 	cap.open(fileName);
 	if (!cap.isOpened())
 		return -1;
@@ -85,7 +77,8 @@ int StitcherPipeline::ProcessVideo(std::string fileName, long long to, long long
 	if (cap.grab())
 	{
 		cap >> second;
-		m_stitcher->CreatePanno(resSize, second, *(from++));
+		second = Mat(second, cropRect);
+		m_stitcher->CreatePanno(second, *(from++));
 	}
 	while (cap.grab() && from != movems.end())
 	{
@@ -93,13 +86,14 @@ int StitcherPipeline::ProcessVideo(std::string fileName, long long to, long long
 		second = Mat(second, cropRect);
 		m_stitcher->AppendToPanno(second, *(from++));
 	}
-	cout << "Saving image to " << m_outFile << "..." << endl;
-	m_stitcher->SaveImage(m_outFile);
+	GeoTransform m_geotransform(srsEPSG, outEPSG);
+	if (!srtName.empty()){
+		ImageData srt_info; 
+		srt_info.SRTHandler(srtName, m_geotransform);
+	}
+	m_geotransform.ScaleCounter(movems);
+	cout << "Saving image to " << m_outFile << ".tiff" << "..." << endl;
+	m_stitcher->SaveImage(m_geotransform, m_outFile, upper_left_coord);
 
-	return cnt;
-}
-
-int StitcherPipeline::MakeEnhancement(void)
-{
 	return 0;
 }

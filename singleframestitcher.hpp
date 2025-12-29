@@ -3,23 +3,29 @@
 #include <string>
 #include <opencv2/calib3d.hpp>
 #include "istitcher.hpp"
+#include "geotransform.hpp"
 
 class SingleFrameStitcher : public IStitcher
 {
 public:
     SingleFrameStitcher(std::string filename) : m_filename(filename) {}
-    virtual cv::Size CalculateSize(std::vector<cv::Mat>& movems, cv::Size imSize) override;
-    virtual void RetranslateToOrigin(std::vector<cv::Mat>& movems) override;
-    virtual void CreatePanno(cv::Size size, cv::Mat image, cv::Mat origin) override;
+    virtual void ImageCounter(std::vector<cv::Mat>& movems, cv::Size imSize, cv::Size result_image_size) override;
+    virtual void RetranslateToOrigin(std::vector<cv::Mat>& movems, cv::Size imSize) override;
+    virtual void CreatePanno(cv::Mat image, cv::Mat origin) override;
     virtual void AppendToPanno(cv::Mat image, cv::Mat origin) override;
-    virtual void SaveImage(std::string filename) override;
+    virtual void SaveImage(GeoTransform & m_geotransform, std::string filename, OGRPoint upper_left_coord) override;
+    virtual std::vector<double> CornerCoordinatesCounter (const cv::Mat &move, cv::Size imSize) override;
+    virtual void ImageNumberFiller (cv::Mat &move, cv::Size imSize) override;
 
-    cv::Mat MakePanno(std::vector<cv::Mat>& movems, std::vector<cv::Mat>& images);
 protected:
+    int count_x, count_y;
     std::string m_filename;
-    cv::Size m_resultSize;
     cv::Point2i m_origin;
-    cv::Mat m_result;
+    std::vector<std::vector<cv::Mat>> m_result;
+    cv::Size m_singleImageSize;
+    std::vector<std::vector<std::pair<int,int>>> image_number;
+    int iterator = 0; 
+    std::pair<double,double> upper_left_coord_in_pixels;
 
 	void makeSumm(cv::InputArray& first, cv::InputArray& second, cv::InputArray& result,
 	 cv::InputArray& mask = cv::noArray());

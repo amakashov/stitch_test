@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5.0)
-project(stitchet_test VERSION 0.1.0 LANGUAGES C CXX)
+project(stitch_test VERSION 0.1.0 LANGUAGES C CXX)
 
 include(CTest)
 enable_testing()
@@ -11,10 +11,15 @@ find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS} )
 message("OpenCV include dir ${OpenCV_INCLUDE_DIRS}")
 
+find_package(GDAL CONFIG REQUIRED)
+find_package(GeographicLib CONFIG REQUIRED)
+
 file(GLOB src *.cpp *.hpp)
-add_executable(stitchet_test ${src})
-target_include_directories(stitchet_test PRIVATE ${OpenCV_INCLUDE_DIRS} )
-target_link_libraries(stitchet_test ${OpenCV_LIBS} )
+add_executable(stitch_test ${src})
+target_include_directories(stitch_test PRIVATE ${OpenCV_INCLUDE_DIRS} )
+target_link_libraries(stitch_test PUBLIC ${OpenCV_LIBS} )
+target_link_libraries(stitch_test PRIVATE GDAL::GDAL)
+target_link_libraries(stitch_test PRIVATE GeographicLib::GeographicLib)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
